@@ -150,7 +150,7 @@ class Definition
             let match, regexp = /%(\w+)%/gi;
             while(match = regexp.exec(argument)) {
                 if (! container.hasParameter(match[1])) {
-                    throw new Error('A references to a non-existing parameter "' + match[1] + '" was found.');
+                    return;
                 }
                 argument = argument.replace(match[0], container.getParameter(match[1]));
             }
