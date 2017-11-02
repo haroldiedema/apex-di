@@ -34,16 +34,17 @@ class YamlLoader extends AbstractLoader
     load (container, file)
     {
         let path_info = path.parse(file);
+        let directory = path.resolve(path_info.dir);
 
         // Add the directory of the given file to the module paths lookup list. This way, relative imports of node-
         // modules are possible from the location of the YAML file.
-        module.paths.unshift(path_info.dir);
+        module.paths.unshift(directory);
 
         // Load the YAML data as an object.
         let data = YAML.load(fs.readFileSync(file), {schema: this._schema});
 
         // Remove the module path from the list after we're done reading.
-        if (module.paths.shift() !== path_info.dir) {
+        if (module.paths.shift() !== directory) {
             throw new Error('Integrity of module lookup paths has been compromised while loading YAML "' + file + '".');
         }
 
