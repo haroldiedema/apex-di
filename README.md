@@ -59,8 +59,8 @@ Usage:
 // myapp/index.js
 const DI = require('apex-di');
 
-const container = new DI.Container();
-      loader    = new DI.YamlLoader();
+const container = new DI.Container(),
+      loader    = new DI.YamlLoader();
 
 container.load(loader, 'container.yml');
 
