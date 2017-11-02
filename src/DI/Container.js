@@ -99,7 +99,9 @@ class Container
     {
         let service_ids = [];
         Object.keys(this.$.definitions).forEach((id) => {
-            service_ids.push(id);
+            if (this.$.definitions[id].hasTag(name)) {
+                service_ids.push(id);
+            }
         });
 
         return service_ids;

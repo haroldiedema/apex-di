@@ -1,0 +1,17 @@
+services:
+    my_argv_aware_service:
+        class: !require "../services/MyServiceArgvTest"
+        arguments:
+            - [] # Injected by ArgvCompilerPass
+        tags:
+            - 'argv.setter'
+            - 'argv.constructor'
+
+    single_argv_service:
+        class: !require "../services/SingleArgvTest"
+        arguments:
+            - "@my_argv_aware_service"
+            - "" # Injected by SingleArgvCompilerPass
+            - "Title: %title%"
+        tags:
+            - 'argv.single'

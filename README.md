@@ -20,56 +20,10 @@ $ npm install apex-di --save
 
 Apex DI uses the YAML syntax to configure the service container.
 
-Example:
-```yaml
-# myapp/container.yml
-imports:
-    - "config/parameters.yml"
-    - "config/services.yml"
+## Example
+See [this example](examples/example.js) for a usage example.
 
-compiler_passes:
-    - "src/CompilerPass"
-
-parameters:
-    foo: "foo"
-    bar: "bar"
-    root: "/%foo%/%bar%"        # /foo/bar
-    path: "%root%/more/paths"   # /foo/bar/more/paths
-    
-services:
-    my_service:
-        class: !require "src/MyService"
-        arguments:
-            - "%path%/%morepath%"
-            - "@my_jquery_service"
-
-
-# myapp/config/parameters.yml
-parameters:
-    morepath: "/foo"
-    
-# myapp/config/services.yml
-services:
-        my_jquery_service:
-            class: !require "jquery"
-```
-
-Usage:
-```js
-// myapp/index.js
-const DI = require('apex-di');
-
-const container = new DI.Container(),
-      loader    = new DI.YamlLoader();
-
-container.load(loader, 'container.yml');
-
-container.getParameter('morepath'); // # /foo/bar/foo
-container.get('my_service'); // # instance of src/MyService 
-```
-
-
-### TODO:
+## TODO:
 
 Allow loading specific classes (functions) from a required file using the following syntax:
 ```yaml

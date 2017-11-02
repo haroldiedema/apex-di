@@ -20,7 +20,9 @@ class YamlLoader extends AbstractLoader
     constructor ()
     {
         super();
-        this._schema = YAML.Schema.create(this._createSchema());
+
+        this._schema      = YAML.Schema.create(this._createSchema());
+        this._lookup_dirs = [];
     }
 
     /**
@@ -72,8 +74,8 @@ class YamlLoader extends AbstractLoader
         if (typeof data.imports === 'object') {
             this._parseImports(container, path_info, data.imports);
         }
-        if (typeof data.compiler_passes === 'object') {
-            this._parseCompilerPasses(container, data.compiler_passes);
+        if (typeof data.passes === 'object') {
+            this._parseCompilerPasses(container, data.passes);
         }
     }
 
@@ -97,7 +99,7 @@ class YamlLoader extends AbstractLoader
     _parseServices (container, services)
     {
         let definition;
-        Object.keys(services).forEach((id) => {
+        Object.keys((services || {})).forEach((id) => {
             definition = new Definition(services[id]['class'], services[id]['arguments'] || []);
 
             // Add method calls.
@@ -148,7 +150,18 @@ class YamlLoader extends AbstractLoader
             new YAML.Type('!require', {
                 kind:      'scalar',
                 construct: (data) => {
-                    return require(data);
+                    try {
+                        return require(data);
+                    } catch (e) {
+                        let file = path.join(module.paths[0], data);
+                        if (! fs.existsSync(file)) {
+                            file += '.js';
+                            if (! fs.existsSync(file)) {
+                                throw new Error('Cannot find module "' + data + '".');
+                            }
+                        }
+                        return require(file);
+                    }
                 }
             })
         ];

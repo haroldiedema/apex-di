@@ -1,7 +1,0 @@
-services:
-    foobar:
-        class: !require "test.js"
-        arguments:
-            - '@a1'
-        tags:
-            - 'foobar'

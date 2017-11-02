@@ -109,7 +109,7 @@ class Definition
 
         // Instantiator
         let Service = function (fn, args) {
-            args.unshift(null);
+            args.unshift(fn.prototype);
             return new (Function.prototype.bind.apply(fn, args));
         };
 
@@ -125,7 +125,7 @@ class Definition
             if (typeof service[fn] !== 'function') {
                 throw new Error('The service does not have a method named "' + fn + '".');
             }
-            service[fn].apply(null, args);
+            service[fn].apply(service, args);
         });
 
         // Properties.
