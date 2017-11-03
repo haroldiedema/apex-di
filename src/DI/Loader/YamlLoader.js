@@ -101,6 +101,12 @@ class YamlLoader extends AbstractLoader
     {
         let definition;
         Object.keys((services || {})).forEach((id) => {
+            // Allow loading modules as services (static objects).
+            if (typeof services[id]['module'] !== 'undefined') {
+                services[id]['class'] = function () { return services[id]['module']; };
+            }
+
+            // Create the definition.
             definition = new Definition(services[id]['class'], services[id]['arguments'] || []);
 
             // Add method calls.
