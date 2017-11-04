@@ -147,7 +147,7 @@ class Definition
     _compileArgument (container, argument)
     {
         if (typeof argument === 'string') {
-            let match, regexp = /%(\w+)%/gi;
+            let match, regexp = /%([A-Za-z0-9\._-]+)%/gi;
             while(match = regexp.exec(argument)) {
                 if (! container.hasParameter(match[1])) {
                     throw new Error('A references to a non-existing parameter "' + match[1] + '" was found.');

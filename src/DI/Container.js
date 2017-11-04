@@ -33,7 +33,7 @@ class Container
             }
 
             if (typeof parameter === 'string') {
-                let match, regexp = /%(\w+)%/gi;
+                let match, regexp = /%([A-Za-z0-9\._-]+)%/gi;
                 while (match = regexp.exec(parameter)) {
                     if (typeof this.$.parameters[match[1]] === 'undefined') {
                         throw new Error('Parameter "' + name + '" references a non-existing parameter "' + match[1] + '".');
