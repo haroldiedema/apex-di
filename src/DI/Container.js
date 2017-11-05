@@ -82,8 +82,8 @@ class Container
             compiler_pass = new compiler_pass();
         }
 
-        if (! (compiler_pass instanceof AbstractCompilerPass)) {
-            throw new Error('Argument #1 of addCompilerPass expeted to be an instance of CompilerPass.');
+        if (typeof compiler_pass.compile !== 'function') {
+            throw new Error('Argument #1 of addCompilerPass expeted to be a valid CompilerPass with a compile() method.');
         }
 
         this.$.compiler_passes.push(compiler_pass);
