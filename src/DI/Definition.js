@@ -142,14 +142,22 @@ class Definition
      * @private
      * @param {Container} container
      * @param {*}         argument
+     * @param {Number}    depth
      * @returns {*}
      */
-    _compileArgument (container, argument)
+    _compileArgument (container, argument, depth)
     {
+        depth = depth || 0;
+        depth += 1;
+
+        if (depth > 2) {
+            return argument;
+        }
+
         if (typeof argument === 'string') {
             let match, regexp = /%([A-Za-z0-9\._-]+)%/gi;
-            while(match = regexp.exec(argument)) {
-                if (! container.hasParameter(match[1])) {
+            while (match = regexp.exec(argument)) {
+                if (!container.hasParameter(match[1])) {
                     throw new Error('A references to a non-existing parameter "' + match[1] + '" was found.');
                 }
                 argument = argument.replace(match[0], container.getParameter(match[1]));
@@ -158,6 +166,14 @@ class Definition
 
         if (typeof argument === 'string' && argument.charAt(0) === '@') {
             argument = container.get(argument.substr(1));
+        }
+
+        if (typeof argument === 'object' && argument !== null) {
+            Object.keys(argument).forEach((key) => {
+                if (typeof argument[key] === 'string') {
+                    argument[key] = this._compileArgument(container, argument[key], depth);
+                }
+            });
         }
 
         return argument;
