@@ -6,11 +6,13 @@
  * ----------------------------------------------------- /_*/
 'use strict';
 
-const fs             = require('fs'),
-      path           = require('path'),
-      YAML           = require('js-yaml'),
-      AbstractLoader = require('../AbstractLoader'),
-      Definition     = require('../Definition');
+const fs              = require('fs'),
+      path            = require('path'),
+      YAML            = require('js-yaml'),
+      AbstractLoader  = require('../AbstractLoader'),
+      Definition      = require('../Definition'),
+      Reference       = require('../Reference'),
+      TaggedReference = require('../TaggedReference');
 
 /**
  * Loads YAML files into the service container.
@@ -40,8 +42,14 @@ class YamlLoader extends AbstractLoader
         // modules are possible from the location of the YAML file.
         module.paths.unshift(directory);
 
+        // Set container as class member in order for the custom YAML types to access it.
+        this.container = container;
+
         // Load the YAML data as an object.
         let data = YAML.load(fs.readFileSync(file), {schema: this._schema});
+
+        // Remove the container reference from the loader.
+        this.container = undefined;
 
         // Remove the module path from the list after we're done reading.
         if (module.paths.shift() !== directory) {
@@ -50,6 +58,24 @@ class YamlLoader extends AbstractLoader
 
         // Process the data.
         this._parse(container, path_info, data);
+    }
+
+    loadRaw (file)
+    {
+        console.log('loadRaw');
+
+        let path_info = path.parse(file),
+            directory = path.resolve(path_info.dir);
+
+        // Add the directory of the given file to the module paths lookup list. This way, relative imports of node-
+        // modules are possible from the location of the YAML file.
+        module.paths.unshift(directory);
+
+        this._is_bare = true;
+        let data = YAML.load(fs.readFileSync(file), {schema: this._schema});
+        this._is_bare = false;
+
+        return data;
     }
 
     /**
@@ -107,11 +133,11 @@ class YamlLoader extends AbstractLoader
             }
 
             // Create the definition.
-            definition = new Definition(services[id]['class'], services[id]['arguments'] || []);
+            definition = new Definition(services[id]['class'], this._parseArguments(services[id]['arguments'] || []));
 
             // Add method calls.
             (services[id].calls || []).forEach((call) => {
-                definition.addMethodCall(call[0], call[1] || []);
+                definition.addMethodCall(call[0], this._parseArguments(call[1] || []));
             });
 
             // Add tags
@@ -142,6 +168,22 @@ class YamlLoader extends AbstractLoader
         });
     }
 
+    /**
+     * @private
+     * @param args_list
+     */
+    _parseArguments (args_list)
+    {
+        Object.keys(args_list).forEach((key) => {
+            let ref_match = (new RegExp(/^@([a-zA-Z0-9\._]+)$/)).exec(args_list[key]);
+            if (ref_match !== null && ref_match.length > 1) {
+                args_list[key] = new Reference(ref_match[1]);
+            }
+        });
+
+        return args_list;
+    }
+
     _parseCompilerPasses (container, passes)
     {
         passes.forEach((pass) => { container.addCompilerPass(pass); });
@@ -157,6 +199,8 @@ class YamlLoader extends AbstractLoader
             new YAML.Type('!require', {
                 kind:      'scalar',
                 construct: (data) => {
+                    if (this._is_bare) return '';
+
                     try {
                         return require(data);
                     } catch (e) {
@@ -169,6 +213,38 @@ class YamlLoader extends AbstractLoader
                         }
                         return require(file);
                     }
+                }
+            }),
+            new YAML.Type('!require', {
+                kind:      'sequence',
+                construct: (data) => {
+                    if (this._is_bare) return '';
+                    let required_module;
+                    try {
+                        required_module = require(data[0]);
+                    } catch (e) {
+                        let file = path.join(module.paths[0], data[0]);
+                        if (! fs.existsSync(file)) {
+                            file += '.js';
+                            if (! fs.existsSync(file)) {
+                                throw new Error('Cannot find module "' + data[0] + '".');
+                            }
+                        }
+                        required_module = require(file);
+                    }
+
+                    if (typeof required_module[data[1]] !== 'function') {
+                        throw new Error('Expected "' + data[1] + '" from "' + data[0] + '" to be a constructor, got ' + (typeof (required_module[data[1]])) + ' instead.');
+                    }
+
+                    return required_module[data[1]];
+                }
+            }),
+            new YAML.Type('!tagged', {
+                kind: 'scalar',
+                construct: (data) => {
+                    if (this._is_bare) return '';
+                    return new TaggedReference(data)
                 }
             })
         ];

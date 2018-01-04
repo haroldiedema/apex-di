@@ -6,6 +6,9 @@
  * ----------------------------------------------------- /_*/
 'use strict';
 
+const Reference       = require('./Reference'),
+      TaggedReference = require('./TaggedReference');
+
 class Definition
 {
     /**
@@ -71,6 +74,20 @@ class Definition
     }
 
     /**
+     * Sets the arguments for this definition.
+     *
+     * @param {Array} args
+     */
+    setArguments (args)
+    {
+        if (! Array.isArray(args)) {
+            throw new Error('Argument one of setArguments() must be of type Array. Got ' + (typeof args) + ' instead.');
+        }
+
+        this.$.argument_list = args;
+    }
+
+    /**
      * Replaces an argument.
      *
      * @param {Number} index
@@ -103,6 +120,9 @@ class Definition
 
         // Compile arguments.
         let _arguments = [];
+        if (! Array.isArray(this.$.argument_list)) {
+            throw new Error('The element "arguments" must be of type Array, got ' + (typeof this.$.argument_list) + '.');
+        }
         this.$.argument_list.forEach((argument) => {
             _arguments.push(this._compileArgument(container, argument));
         });
@@ -150,7 +170,8 @@ class Definition
         depth = depth || 0;
         depth += 1;
 
-        if (depth > 2) {
+        if (depth > 10) {
+            console.warn('Recursion detected. Aborting argument parsing');
             return argument;
         }
 
@@ -162,17 +183,24 @@ class Definition
                 }
                 argument = argument.replace(match[0], container.getParameter(match[1]));
             }
+            return argument;
         }
 
-        if (typeof argument === 'string' && argument.charAt(0) === '@') {
-            argument = container.get(argument.substr(1));
+        if (argument instanceof Reference) {
+            return container.get(argument.id);
+        }
+
+        if (argument instanceof TaggedReference) {
+            let arg = [];
+            container.findTaggedServiceIds(argument.tag).forEach((id) => {
+                arg.push(container.get(id));
+            });
+            return arg;
         }
 
         if (typeof argument === 'object' && argument !== null) {
             Object.keys(argument).forEach((key) => {
-                if (typeof argument[key] === 'string') {
-                    argument[key] = this._compileArgument(container, argument[key], depth);
-                }
+                argument[key] = this._compileArgument(container, argument[key], depth);
             });
         }
 

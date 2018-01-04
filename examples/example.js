@@ -26,3 +26,9 @@ header('SingleArgvText example');
 console.log('Dependency: ', container.get('single_argv_service').a_dependency);
 console.log('Argv[1]: ', container.get('single_argv_service').argv_thing);
 console.log('Title (param): ', container.get('single_argv_service').title);
+
+header('AutoTaggedServices using !tagged YAML type');
+console.log(container.get('auto_tag_collector').tagged_services);
+
+header('Complex Constructor');
+console.log(container.get('weird_arg_object').auto_tagged_object.auto_tagged);

@@ -6,14 +6,17 @@
  * ----------------------------------------------------- /_*/
 'use strict';
 
-module.exports = {
-    Container:  require('./DI/Container'),
-    Definition: require('./DI/Definition'),
-    YamlLoader: require('./DI/Loader/YamlLoader'),
+class TaggedReference
+{
+    constructor (tag)
+    {
+        this.tag = tag;
+    }
 
-    AbstractLoader:       require('./DI/AbstractLoader'),
-    AbstractCompilerPass: require('./DI/AbstractCompilerPass'),
+    toString ()
+    {
+        return this.tag;
+    }
+}
 
-    Reference:       require('./DI/Reference'),
-    TaggedReference: require('./DI/TaggedReference'),
-};
+module.exports = TaggedReference;
